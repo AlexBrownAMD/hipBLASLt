@@ -149,24 +149,24 @@ public:
     }
 #ifdef ROCM_USE_FLOAT8 //todo
     // Single NaN float8...
-    explicit operator hipblaslt_f8_ocp()
+    explicit operator hipblaslt_f8()
     {
         union
         {
-            uint8_t          bits;
-            hipblaslt_f8_ocp value;
+            uint8_t      bits;
+            hipblaslt_f8 value;
         } x;
         x.bits = 0x7f;
         return x.value;
     }
 
     // Single NaN bfloat8...
-    explicit operator hipblaslt_bf8_ocp()
+    explicit operator hipblaslt_bf8()
     {
         union
         {
-            uint8_t           bits;
-            hipblaslt_bf8_ocp value;
+            uint8_t       bits;
+            hipblaslt_bf8 value;
         } x;
         x.bits = 0x7e;
         return x.value;
@@ -189,8 +189,9 @@ public:
     template <typename T, std::enable_if_t<std::is_integral<T>{}, int> = 0>
     explicit operator T()
     {
-        return rand2() ? std::numeric_limits<T>::min : std::numeric_limits<T>::max;
+        return rand2() ? std::numeric_limits<T>::min() : std::numeric_limits<T>::max();
     }
+
     // Random float
     template <typename T, std::enable_if_t<!std::is_integral<T>{}, int> = 0>
     explicit operator T()

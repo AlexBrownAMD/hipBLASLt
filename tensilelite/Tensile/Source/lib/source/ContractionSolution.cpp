@@ -3092,8 +3092,7 @@ namespace Tensile
                                                      sizeMapping.depthU,
                                                      x,
                                                      y,
-                                                     z,
-                                                     cuCount);
+                                                     z);
         }
 
         // Limit the CUs Stream-K is launched on either max or the specified,

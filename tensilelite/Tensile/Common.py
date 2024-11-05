@@ -951,6 +951,7 @@ validParameters = {
     #   1 = Only reduce CUs for small problems to number of output tiles when num_tiles < CU count.
     #   2 = Also reduce CUs used for large sizes to improve data-parallel portion and reduce power.
     #   3 = Analytically predict the best grid-size by weighing the cost of the fix-up step and the cost of processing MACs (default).
+    #       Note: dynamic grid coefficients currently apply to gfx942 variants
     # TENSILE_STREAMK_MAX_CUS allows the user to manually set maximum number of CUs used, which could free up some CUs for
     #   other operations to run in parallel with gemm.
     # TENSILE_STREAMK_GRID_MULTIPLIER lets you set how many workgroups are created per CU being used.

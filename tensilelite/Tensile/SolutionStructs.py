@@ -2144,13 +2144,13 @@ class Solution(collections.abc.Mapping):
       state["GlobalSplitU"] = 0 # Cannot enable both Stream-K and GSU
       state["GlobalSplitUAlgorithm"] = "MultipleBuffer" # Set default Algorithm
       if not (state["ProblemType"]["DataType"].isSingle() or state["ProblemType"]["DataType"].isHalf() or state["ProblemType"]["DataType"].isBFloat16()):
-        reject(state, "Stream-K currently only tested for F32, F16, BF16")
+        reject(state, "Type {} for DataType not yet supported with StreamK".format(state["ProblemType"]["DataType"].toChar()))
       if not (state["ProblemType"]["DataTypeA"].isSingle() or state["ProblemType"]["DataTypeA"].isHalf() or state["ProblemType"]["DataTypeA"].isBFloat16()):
-        reject(state, "Stream-K currently only tested for F32, F16, BF16")
+        reject(state, "Type {} for DataTypeA not yet supported with StreamK".format(state["ProblemType"]["DataTypeA"].toChar()))
       if not (state["ProblemType"]["DataTypeB"].isSingle() or state["ProblemType"]["DataTypeB"].isHalf() or state["ProblemType"]["DataTypeB"].isBFloat16()):
-        reject(state, "Stream-K currently only tested for F32, F16, BF16")
+        reject(state, "Type {} for DataTypeB not yet supported with StreamK".format(state["ProblemType"]["DataTypeB"].toChar()))
       if not (state["ProblemType"]["DestDataType"].isSingle() or state["ProblemType"]["DestDataType"].isHalf() or state["ProblemType"]["DestDataType"].isBFloat16()):
-        reject(state, "Stream-K currently only tested for F32, F16, BF16")
+        reject(state, "Type {} for DestDataType not yet supported with StreamK".format(state["ProblemType"]["DestDataType"].toChar()))
       if state["MIWaveGroup"][0] * state["MIWaveGroup"][1] != 4:
         reject(state, "Stream-K requries MIWaveGroup0*MIWaveGroup1=4")
       if not state["EnableMatrixInstruction"]:

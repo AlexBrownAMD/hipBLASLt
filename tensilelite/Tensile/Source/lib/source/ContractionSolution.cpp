@@ -61,24 +61,35 @@ namespace TensileLite
             }
         } // namespace math
 
-        constexpr size_t num_iters_per_cta(
-            size_t BLK_M, size_t BLK_N, size_t BLK_K, size_t m, size_t n, size_t k, int g)
+        constexpr size_t num_iters_total(size_t output_tiles, size_t iters_per_tile)
         {
-            return math::safe_ceil_div(math::safe_ceil_div(m, BLK_M) * math::safe_ceil_div(n, BLK_N)
-                                           * math::safe_ceil_div(k, BLK_K),
-                                       g);
+            return output_tiles * iters_per_tile;
         }
 
-        constexpr size_t number_of_output_tiles(size_t BLK_M, size_t BLK_N, size_t m, size_t n)
+        constexpr size_t num_iters_per_tile(size_t BLK_K, size_t k)
+        {
+            return math::safe_ceil_div(k, BLK_K);
+        }
+
+        constexpr size_t num_iters_per_cta(size_t iters_total, int g)
+        {
+            return math::safe_ceil_div(iters_total, g);
+        }
+
+        constexpr size_t number_of_output_tiles(size_t BLK_M, size_t BLK_N, size_t m, size_t n, size_t batch)
         {
             size_t m_tiles = math::safe_ceil_div(m, BLK_M);
             size_t n_tiles = math::safe_ceil_div(n, BLK_N);
-            return m_tiles * n_tiles;
+            return m_tiles * n_tiles * batch;
         }
 
-        constexpr size_t num_fixup_peers(size_t BLK_K, size_t k, size_t iters_per_cta)
+        constexpr size_t num_fixup_peers(size_t BLK_K, size_t k, size_t iters_total, size_t iters_per_tile, size_t iters_per_cta, size_t g)
         {
-            return math::safe_ceil_div(math::safe_ceil_div(k, BLK_K), iters_per_cta);
+            // If tiles don't evenly divide there are always at least 2 fixup peers, and more if iters_per_tile > iters_per_cta
+            size_t hasFixup = (iters_total % g == 0 && // Check if some WGs have more iters than others
+                               iters_per_cta % iters_per_tile == 0) // Check if WGs have an even number of full tiles
+                               ? 0 : 1;
+            return math::safe_ceil_div(iters_per_tile, iters_per_cta) + hasFixup;
         }
 
         std::tuple<double, size_t, size_t> predicted_runtime(size_t BLK_M,
@@ -87,14 +98,18 @@ namespace TensileLite
                                                              size_t m,
                                                              size_t n,
                                                              size_t k,
+                                                             size_t batch,
                                                              int    g,
                                                              double a,
                                                              double b,
                                                              double c,
                                                              double d)
         {
-            size_t iters_per_cta = num_iters_per_cta(BLK_M, BLK_N, BLK_K, m, n, k, g);
-            size_t fixup_peers   = num_fixup_peers(BLK_K, k, iters_per_cta);
+            size_t output_tiles   = number_of_output_tiles(BLK_M, BLK_N, m, n, batch);
+            size_t iters_per_tile = num_iters_per_tile(BLK_K, k); // maximum iters per tile, including extra iters when uneven
+            size_t iters_total    = num_iters_total(output_tiles, iters_per_tile);
+            size_t iters_per_cta  = num_iters_per_cta(iters_total, g);
+            size_t fixup_peers    = num_fixup_peers(BLK_K, k, iters_total, iters_per_tile, iters_per_cta, g);
 
             return {a + (b * (fixup_peers > 1)) + (c * iters_per_cta) + (d * (fixup_peers - 1)),
                     iters_per_cta,
@@ -107,6 +122,7 @@ namespace TensileLite
                                      size_t m,
                                      size_t n,
                                      size_t k,
+                                     size_t batch,
                                      int    grid_start,
                                      int    grid_end)
         {
@@ -139,14 +155,14 @@ namespace TensileLite
             for(; g <= grid_end; ++g)
             {
                 auto [runtime, iters_per_cta, fixup_peers]
-                    = predicted_runtime(BLK_M, BLK_N, BLK_K, m, n, k, g, a, b, c, d);
+                    = predicted_runtime(BLK_M, BLK_N, BLK_K, m, n, k, batch, g, a, b, c, d);
 
                 if(debug)
                 {
                     std::cout << "grid size: " << g << ", runtime: " << runtime
                               << ", iters_per_cta: " << iters_per_cta
                               << ", fixup_peers: " << fixup_peers << ", m: " << m << ", n: " << n
-                              << ", k: " << k << ", a: " << a << ", b: " << b << ", c: " << c
+                              << ", k: " << k << ", batch: " << batch << ", a: " << a << ", b: " << b << ", c: " << c
                               << ", d: " << d << std::endl;
                 }
 
@@ -160,7 +176,7 @@ namespace TensileLite
             if(debug)
             {
                 std::cout << "Number of Output Tiles: "
-                          << number_of_output_tiles(BLK_M, BLK_N, m, n) << std::endl;
+                          << number_of_output_tiles(BLK_M, BLK_N, m, n, batch) << std::endl;
                 std::cout << "Minimum runtime: " << min_grid_runtime.second
                           << " @ grid size: " << min_grid_runtime.first << std::endl;
             }

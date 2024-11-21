@@ -737,11 +737,11 @@ namespace TensileLite
         {
             // Assert hardware is not null
             // For now grouped gemm is not supported and passes nullptr
-            TENSILE_ASSERT_EXC(hardware != nullptr);
-            size_t cuCount = 0;
-            
-            auto   tiles   = problem.getNumTiles(sizeMapping);
-            size_t skGrid  = getSKGrid(problem, *hardware, tiles);
+            // TENSILE_ASSERT_EXC(hardware != nullptr);
+            // size_t cuCount = 0;
+
+            // auto   tiles   = problem.getNumTiles(sizeMapping);
+            // size_t skGrid  = getSKGrid(problem, *hardware, tiles);
             // StreamK workspace + flags
             args.template append<void const*>("ws", inputs.ws);
             args.template append<void*>("Flags", inputs.Synchronizer);
@@ -3089,6 +3089,7 @@ namespace TensileLite
             size_t x = 1;
             size_t y = 1;
             size_t z = 1;
+            size_t batch = 1;
             for(size_t i = 0; i < problem.freeIndicesA().size(); i++)
             {
                 x *= problem.freeSizeA(i);
@@ -3097,10 +3098,13 @@ namespace TensileLite
             {
                 y *= problem.freeSizeB(i);
             }
-            // TODO Batch dimension
             for(size_t i = 0; i < problem.boundIndices().size(); ++i)
             {
                 z *= problem.boundSize(i);
+            }
+            for(size_t i = 0; i < problem.batchIndices().size(); ++i)
+            {
+                batch *= problem.batchSize(i);
             }
 
             return streamk::best_predicted_grid_size(sizeMapping.macroTile.x,
@@ -3109,6 +3113,7 @@ namespace TensileLite
                                                      x,
                                                      y,
                                                      z,
+                                                     batch,
                                                      1,
                                                      cuCount);
         }

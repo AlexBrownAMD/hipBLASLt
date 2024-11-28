@@ -86,10 +86,10 @@ namespace TensileLite
         constexpr size_t num_fixup_peers(size_t BLK_K, size_t k, size_t iters_total, size_t iters_per_tile, size_t iters_per_cta, size_t g)
         {
             // If tiles don't evenly divide there are always at least 2 fixup peers, and more if iters_per_tile > iters_per_cta
-            size_t hasFixup = (iters_total % g == 0 && // Check if some WGs have more iters than others
-                               iters_per_cta % iters_per_tile == 0) // Check if WGs have an even number of full tiles
-                               ? 0 : 1;
-            return math::safe_ceil_div(iters_per_tile, iters_per_cta) + hasFixup;
+            // size_t hasFixup = (iters_total % g == 0 && // Check if some WGs have more iters than others
+            //                    iters_per_cta % iters_per_tile == 0) // Check if WGs have an even number of full tiles
+            //                    ? 0 : 1;
+            return math::safe_ceil_div(iters_per_tile, iters_per_cta); // + hasFixup;
         }
 
         std::tuple<double, size_t, size_t> predicted_runtime(size_t BLK_M,

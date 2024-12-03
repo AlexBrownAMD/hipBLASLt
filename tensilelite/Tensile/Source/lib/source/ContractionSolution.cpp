@@ -82,7 +82,7 @@ namespace TensileLite
             return m_tiles * n_tiles * batch;
         }
 
-        constexpr size_t num_fixup_peers(size_t BLK_K, size_t k, size_t iters_total, size_t iters_per_tile, size_t iters_per_cta, size_t g)
+        constexpr size_t num_fixup_peers(size_t iters_total, size_t iters_per_tile, size_t iters_per_cta)
         {
             // If tiles don't evenly divide there are always at least 2 fixup peers, and more if iters_per_tile > iters_per_cta
             // size_t hasFixup = (iters_total % g == 0 && // Check if some WGs have more iters than others
@@ -108,7 +108,7 @@ namespace TensileLite
             size_t iters_per_tile = num_iters_per_tile(BLK_K, k); // maximum iters per tile, including extra iters when uneven
             size_t iters_total    = num_iters_total(output_tiles, iters_per_tile);
             size_t iters_per_cta  = num_iters_per_cta(iters_total, g);
-            size_t fixup_peers    = num_fixup_peers(BLK_K, k, iters_total, iters_per_tile, iters_per_cta, g);
+            size_t fixup_peers    = num_fixup_peers(iters_total, iters_per_tile, iters_per_cta);
 
             return {a + (b * (fixup_peers > 1)) + (c * iters_per_cta) + (d * (fixup_peers - 1)),
                     iters_per_cta,
@@ -736,11 +736,8 @@ namespace TensileLite
         {
             // Assert hardware is not null
             // For now grouped gemm is not supported and passes nullptr
-            // TENSILE_ASSERT_EXC(hardware != nullptr);
-            // size_t cuCount = 0;
+            TENSILE_ASSERT_EXC(hardware != nullptr);
 
-            // auto   tiles   = problem.getNumTiles(sizeMapping);
-            // size_t skGrid  = getSKGrid(problem, *hardware, tiles);
             // StreamK workspace + flags
             args.template append<void const*>("ws", inputs.ws);
             args.template append<void*>("Flags", inputs.Synchronizer);

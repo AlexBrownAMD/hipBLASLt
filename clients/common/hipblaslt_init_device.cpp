@@ -224,6 +224,14 @@ void hipblaslt_init_device(ABC_dims                 abc,
                            size_t                   stride,
                            size_t                   batch_count)
 {
+    static const char* db2 = std::getenv("TENSILE_DB2");
+    static const bool skip_launch = db2 ? strtol(db2, nullptr, 0) & 0x1 : false;
+    if(skip_launch)
+    {
+        std::cout << "DEBUG: Skip execution of kernel for matrix initialization" << std::endl;
+        return;
+    }
+
     switch(type)
     {
     case HIP_R_32F:
